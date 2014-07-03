@@ -4,7 +4,7 @@ var PeerIndexClient = require('peerindex');
   var query = { twitter_screen_name : 'azeem' };
 
   api.actorExtended(query, function(actor, result){
-    
+    console.log(result);
   });
 
   api.actorTopic(query, function(actor, result){
