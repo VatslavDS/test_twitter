@@ -61,6 +61,7 @@ var UserSchema = mongoose.Schema({
         }
     },
     klout : {
+	klout_id : { type : Number },
         topics : [String],
         score : { type : Number },
         graph : {
@@ -78,7 +79,7 @@ var UserSchema = mongoose.Schema({
     }
 });
 
-//DAO
+//DAO Twitter
 UserSchema.statics.TwitterFindByScreenName = function TwitterFindByScreenName(screenName, callback){
     Model = this;
     Model.findOne({screen_name :screenName }, function(err, data){
@@ -110,8 +111,8 @@ UserSchema.statics.TwitterFindBasicInfo = function TwitterFindBasicInfo(id, call
     });
 };
 
-UserSchema.statics.TwitterFindByIdAndUpdate = function TwitterFindByIdAndUpdate(id, new_, callback){
-    this.findOne({twitter_id : id}, function(err, data){
+UserSchema.statics.TwitterFindByIdAndUpdate = function TwitterFindByIdAndUpdate(new_, callback){
+    this.findOne({twitter_id : new_.twitter_id}, function(err, data){
         data.twitter_id = new_.twitter_id;
 	data.twitter_id_str = new_.twitter_id_str;
 	data.name = new_.name;
@@ -136,14 +137,115 @@ UserSchema.statics.TwitterFindByIdAndUpdate = function TwitterFindByIdAndUpdate(
 	data.profile_image_url = new_.profile_image_url;
 	data.profile_background_title = new_.profile_background_title;
 	data.is_suspended = new_.is_suspended;
+	data.update_dates = new_.update_dates;
 
 	data.save(function(err){
-	    if(err) return handleError(err);
+	    callback(err);
 	});
-	done(err, data);
     });
 };
-        
+
+UserSchema.statics.TwitterFindByIdAndUpdateIsSuspended = function TwitterFindByIdAndUpdateIsSuspended(new_, callback){
+    this.findOne({twitter_id : new_.twitter_id}, function(err, data){
+	data.is_suspended = new_.is_suspended;
+        data.save(function(err){
+	    callback(err);
+	});
+    });
+};
+
+UserSchema.statics.TwitterFindByIdAndReturnScreenName = function TwitterFindBydIdAndReturnScreenName(id, callback){
+    this.findOne({twitter_id : id}, function(err, data){
+        callback(err, data.screen_name);
+    }); 
+};
+
+//DAO Klout
+UserSchema.statics.KloutUpdateId = function KloutUpdateId(screen_name, klout_id, callback){
+    this.findOne({screen_name : screen_name}, function(err, user){
+	user.klout.klout_id = klout_id;
+	user.save(function(err){
+	    callback(err);
+	});
+    });
+};
+
+UserSchema.statics.KloutGetId = function KloutGetId(twitter_id, callback){
+    this.findOne({twitter_id : twitter_id}, function(err, user){
+        callback(err, user.klout.klout_id);
+    });
+};
+
+UserSchema.statics.KloutAddNameTopics = function KloutAddNameTopics(topics, user, callback){
+    topics.forEach(function(topic){
+	user.klout.topics.push(topic.displayName);
+    });
+    user.save(function(err){
+        callback(err);
+    });
+};
+
+UserSchema.statics.KloutAddInfluencersAndInfluencees = function KloutAddInfluencersAndInfluencees(influencers, influencees, user, callback){
+    influencers.forEach(function(influence){
+	user.klout.graph.influenced_by.push(influence.entity.id);
+    });
+
+    influencees.forEach(function(influence){
+        user.klout.graph.influencer_of.push(influence.entity.id);
+    });
+    user.save(function(err){
+        callback(err);
+    });
+};
+
+UserSchema.statics.KloutAddScore = function KloutAddScore(score, user, callback){
+    user.klout.score = score;
+    user.save(function(err){
+        callback(err);
+    });
+};
+
+UserSchema.statics.KloutGetData = function KloutGetData(twitter_id, callback){
+    this.TwitterFindById(twitter_id, function(err, user){
+        callback(err, user.klout);
+    });
+};
+
+UserSchema.statics.KloutGetScore = function KloutGetScore(twitter_id , callback){
+    this.TwitterFindById(twitter_id, function(err, user){
+        callback(err, user.klout.score);
+    });
+};
+
+UserSchema.statics.KloutGetTopics = function KloutGetTopics(twitter_id , callback){
+    this.TwitterFindById(twitter_id, function(err, user){
+        callback(err, user.klout.topics);
+    });
+};
+
+UserSchema.statics.KloutGetGraph = function KloutGetGraph(twitter_id , callback){
+    this.TwitterFindById(twitter_id, function(err, user){
+        callback(err, user.klout.graph);
+    });
+};
+
+
+//DAO Peer_Index
+UserSchema.statics.PeerIndexAddExtended = function PeerIndexAddExtended(twitter_id, data, callback){
+    this.TwitterFindById(twitter_id, function(err, user){
+	user.peerindex.demographics.location.longitude = data.location.longitude;
+	user.peerindex.demographics.location.latitude = data.location.latitude;
+	user.peerindex.demographics.location.country_code = data.location.country_code;
+	user.peerindex.demographics.location.place_name = data.location.place_name;
+	user.peerindex.demographics.location.place_type = data.location.place_type;
+	user.peerindex.demographucs.location.geoname_id = data.location.geoname_id;
+
+	user.save(function(err){
+	    callback(err);	
+	});
+    });
+};
+
 var User = mongoose.model('User', UserSchema);
 
 module.exports = User;

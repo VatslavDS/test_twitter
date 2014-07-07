@@ -6,7 +6,6 @@ var Twitter = require("./server.js")(Twit);
 var t_dummy;
 
 //Bootstrap current dummy_user
-var user = new User();
 
 describe('User has', function(){
     beforeEach(function(done){
@@ -77,7 +76,7 @@ describe('User has', function(){
     it('basic info', function(done){
 	User.TwitterFindBasicInfo(37369271, function(err, us){
 	    us.should.have.property("twitter_id", 37369271);
-	    us.should.have.property("screen_name", '234234');
+	    us.should.have.property("screen_name", 'francesco');
 	    us.should.have.property("followers_count", 2);
 	    us.should.have.property("description", "");
 	    done();
@@ -115,8 +114,9 @@ describe('User has', function(){
 	});
     });
     it('Update user', function(done){
+	//We need to figure out the Date format of field created_at doesn`t accept new Date.now
         var update_user = {
-	    twitter_id : 453,
+	    twitter_id : 37369271,
             twitter_id_str : '453',
             name : 'francesco',
             screen_name : 'francesco',
@@ -130,7 +130,7 @@ describe('User has', function(){
             timezone : 'timezone', 
             url : '',
             lang : 'en',
-            created_at : Date.now,
+            created_at : new Date("25 Dec, 1995 23:15:00"),
             verified : true,
             protected : true,
             notifications : false,
@@ -139,12 +139,23 @@ describe('User has', function(){
             default_profile_image : 'www.string.com',
             profile_image_url : 'www.string.com/image.jpg',
             profile_background_title : 'teletubie',
-	    is_suspended : true
+	    is_suspended : true,
+	    update_dates : { update_dates : Date.now }
 	};
-	User.TwitterFindByIdAndUpdate(update_user, update_user, function(err, data){
-	    console.log(data);
+	User.TwitterFindByIdAndUpdate(update_user, function(err){
+	    if(err) throw err;
 	    done();
 	});
     });
+    it('Update user field is_suspended', function(done){
+	var update_user = {
+	    twitter_id : 37369271,
+	    is_suspended : false
+	};
+	User.TwitterFindByIdAndUpdateIsSuspended(update_user, function(err){
+	    if(err) throw err;
+	    done();
+	});
+    });	
 });
 
